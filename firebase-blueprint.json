@@ -1,0 +1,117 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "User profile data including preferences and stats.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The unique identifier for the user." },
+        "email": { "type": "string", "format": "email", "description": "The user's email address." },
+        "displayName": { "type": "string", "description": "The user's display name." },
+        "photoURL": { "type": "string", "description": "The user's profile picture URL." },
+        "sessions": { "type": "integer", "description": "Total meditation sessions." },
+        "totalMinutes": { "type": "integer", "description": "Total meditation minutes." },
+        "totalSeconds": { "type": "integer", "description": "Total meditation seconds." },
+        "todayMin": { "type": "integer", "description": "Meditation minutes today." },
+        "todaySeconds": { "type": "integer", "description": "Meditation seconds today." },
+        "streak": { "type": "integer", "description": "Current daily streak." },
+        "unlockedBadges": { "type": "array", "items": { "type": "string" }, "description": "List of unlocked badge IDs." },
+        "maxSessionDuration": { "type": "integer", "description": "Longest single session in minutes." },
+        "lateNightSessions": { "type": "integer", "description": "Number of sessions after 10 PM." },
+        "lastSessionDate": { "type": "string", "description": "Date of the last session." },
+        "dailyMinutes": { "type": "object", "additionalProperties": { "type": "integer" }, "description": "Minutes meditated per day (YYYY-MM-DD)." },
+        "dailySeconds": { "type": "object", "additionalProperties": { "type": "integer" }, "description": "Seconds meditated per day (YYYY-MM-DD)." },
+        "soundMeditationMinutes": { "type": "object", "additionalProperties": { "type": "integer" }, "description": "Minutes meditated per sound." },
+        "theme": { "type": "string", "description": "App theme." },
+        "soundEnabled": { "type": "boolean", "description": "Whether sound is enabled." },
+        "vibrationEnabled": { "type": "boolean", "description": "Whether vibration is enabled." },
+        "startSound": { "type": "string", "description": "Start sound ID." },
+        "endSound": { "type": "string", "description": "End sound ID." },
+        "ambientSound": { "type": "string", "description": "Ambient sound ID." },
+        "dailyGoal": { "type": "integer", "description": "Daily goal in minutes." },
+        "startDelayEnabled": { "type": "boolean", "description": "Whether start delay is enabled." },
+        "duration": { "type": "integer", "description": "Default session duration." },
+        "isCustomDurationMode": { "type": "boolean", "description": "Whether custom duration is used." },
+        "customMinutes": { "type": "integer", "description": "Custom minutes." },
+        "customSeconds": { "type": "integer", "description": "Custom seconds." },
+        "ringGradient": { "type": "string", "description": "Ring gradient ID." },
+        "chartColor": { "type": "string", "description": "Chart color ID." },
+        "endBellEnabled": { "type": "boolean", "description": "Whether end bell is enabled." },
+        "notificationsEnabled": { "type": "boolean", "description": "Whether notifications are enabled." },
+        "reminderTime": { "type": "string", "description": "Preferred reminder time (HH:mm)." },
+        "role": { "type": "string", "enum": ["admin", "user"], "description": "User role for access control." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the profile was created." },
+        "lastLogin": { "type": "string", "format": "date-time", "description": "When the user last logged in." }
+      },
+      "required": ["uid", "email", "createdAt"]
+    },
+    "Session": {
+      "title": "Meditation Session",
+      "description": "A single meditation session record.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The ID of the user who completed the session." },
+        "date": { "type": "string", "format": "date-time", "description": "When the session was completed." },
+        "duration": { "type": "integer", "description": "Duration of the session in seconds." },
+        "minutes": { "type": "number", "description": "Duration of the session in minutes." },
+        "type": { "type": "string", "description": "Type of meditation session (e.g., custom, preset)." },
+        "mood": { "type": "integer", "description": "Mood level from 1 to 5 recorded after the session." },
+        "note": { "type": "string", "description": "Optional note recorded after the session." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp of when the session was recorded." }
+      },
+      "required": ["userId", "date", "duration", "minutes", "createdAt"]
+    },
+    "Article": {
+      "title": "Blog Article",
+      "description": "A meditation blog article.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique article ID." },
+        "title": { "type": "string", "description": "Article title." },
+        "excerpt": { "type": "string", "description": "Short description." },
+        "body": { "type": "string", "description": "Rich text body." },
+        "category": { "type": "string", "description": "Article category." },
+        "author": { "type": "string", "description": "Article author." },
+        "readingTime": { "type": "string", "description": "Reading time (e.g., 5 minuti)." },
+        "imageUrl": { "type": "string", "description": "Image URL." },
+        "status": { "type": "string", "enum": ["draft", "published"], "description": "Article status." },
+        "publishedAt": { "type": "string", "format": "date-time", "description": "Publication date." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation date." }
+      },
+      "required": ["id", "title", "body", "category", "status", "createdAt"]
+    },
+    "Track": {
+      "title": "Music Track",
+      "description": "A music track for the player.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique track ID." },
+        "name": { "type": "string", "description": "Track name." },
+        "category": { "type": "string", "enum": ["Binaural", "Solfeggio", "Nature", "Meditation"], "description": "Track category." },
+        "url": { "type": "string", "description": "Audio file URL." },
+        "image": { "type": "string", "description": "Cover image URL." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation date." },
+        "order": { "type": "integer", "description": "Display order." }
+      },
+      "required": ["id", "name", "category", "url", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile document."
+    },
+    "/sessions/{sessionId}": {
+      "schema": "Session",
+      "description": "Meditation session record."
+    },
+    "/articles/{articleId}": {
+      "schema": "Article",
+      "description": "Blog article document."
+    },
+    "/tracks/{trackId}": {
+      "schema": "Track",
+      "description": "Music track document."
+    }
+  }
+}

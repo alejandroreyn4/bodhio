@@ -1,0 +1,188 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId} (matches request.auth.uid)
+    // Fields:
+    //   - uid: string (required, immutable) - The unique identifier for the user.
+    //   - email: string (required, immutable) - The user's email address.
+    //   - displayName: string (optional) - The user's display name.
+    //   - photoURL: string (optional) - The user's profile picture URL.
+    //   - sessions: number (optional) - Total meditation sessions.
+    //   - totalMinutes: number (optional) - Total meditation minutes.
+    //   - totalSeconds: number (optional) - Total meditation seconds.
+    //   - todayMin: number (optional) - Meditation minutes today.
+    //   - todaySeconds: number (optional) - Meditation seconds today.
+    //   - streak: number (optional) - Current daily streak.
+    //   - unlockedBadges: list (optional) - List of unlocked badge IDs.
+    //   - maxSessionDuration: number (optional) - Longest single session in minutes.
+    //   - lateNightSessions: number (optional) - Number of sessions after 10 PM.
+    //   - lastSessionDate: string (optional) - Date of the last session.
+    //   - dailyMinutes: map (optional) - Minutes meditated per day.
+    //   - dailySeconds: map (optional) - Seconds meditated per day.
+    //   - soundMeditationMinutes: map (optional) - Minutes meditated per sound.
+    //   - theme: string (optional) - App theme.
+    //   - soundEnabled: boolean (optional) - Whether sound is enabled.
+    //   - vibrationEnabled: boolean (optional) - Whether vibration is enabled.
+    //   - startSound: string (optional) - Start sound ID.
+    //   - endSound: string (optional) - End sound ID.
+    //   - ambientSound: string (optional) - Ambient sound ID.
+    //   - dailyGoal: number (optional) - Daily goal in minutes.
+    //   - startDelayEnabled: boolean (optional) - Whether start delay is enabled.
+    //   - duration: number (optional) - Default session duration.
+    //   - isCustomDurationMode: boolean (optional) - Whether custom duration is used.
+    //   - customMinutes: number (optional) - Custom minutes.
+    //   - customSeconds: number (optional) - Custom seconds.
+    //   - ringGradient: string (optional) - Ring gradient ID.
+    //   - chartColor: string (optional) - Chart color ID.
+    //   - endBellEnabled: boolean (optional) - Whether end bell is enabled.
+    //   - createdAt: timestamp (required, immutable) - When the profile was created.
+    //
+    // Collection: sessions
+    // Document ID: {sessionId}
+    // Fields:
+    //   - userId: string (required, immutable) - The ID of the user.
+    //   - date: string (required, immutable) - ISO date string.
+    //   - duration: number (required, immutable) - Duration in seconds.
+    //   - minutes: number (required, immutable) - Duration in minutes.
+    //   - type: string (required, immutable) - Session type.
+    //   - mood: number (optional) - Mood level from 1 to 5.
+    //   - note: string (optional) - Optional note.
+    //   - createdAt: timestamp (required, immutable) - Server timestamp.
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    function isAdmin() {
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return isAuthenticated() && (
+        (userDoc.data != null && userDoc.data.role == 'admin') ||
+        (request.auth.token.email == "torrespost@gmail.com")
+      );
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['uid', 'email', 'displayName', 'photoURL', 'sessions', 'totalMinutes', 'totalSeconds', 'todayMin', 'todaySeconds', 'streak', 'unlockedBadges', 'maxSessionDuration', 'lateNightSessions', 'lastSessionDate', 'dailyMinutes', 'dailySeconds', 'soundMeditationMinutes', 'theme', 'soundEnabled', 'vibrationEnabled', 'startSound', 'endSound', 'ambientSound', 'dailyGoal', 'startDelayEnabled', 'duration', 'isCustomDurationMode', 'customMinutes', 'customSeconds', 'ringGradient', 'chartColor', 'endBellEnabled', 'notificationsEnabled', 'reminderTime', 'createdAt', 'role', 'lastLogin']) &&
+             data.uid is string && data.uid.size() > 0 &&
+             data.email is string && isValidEmail(data.email) &&
+             (!('displayName' in data) || data.displayName == null || (data.displayName is string && data.displayName.size() < 100)) &&
+             (!('photoURL' in data) || data.photoURL == null || (data.photoURL is string && data.photoURL.size() < 500)) &&
+             (!('sessions' in data) || data.sessions == null || data.sessions is number) &&
+             (!('totalMinutes' in data) || data.totalMinutes == null || data.totalMinutes is number) &&
+             (!('totalSeconds' in data) || data.totalSeconds == null || data.totalSeconds is number) &&
+             (!('todayMin' in data) || data.todayMin == null || data.todayMin is number) &&
+             (!('todaySeconds' in data) || data.todaySeconds == null || data.todaySeconds is number) &&
+             (!('streak' in data) || data.streak == null || data.streak is number) &&
+             (!('unlockedBadges' in data) || data.unlockedBadges == null || data.unlockedBadges is list) &&
+             (!('maxSessionDuration' in data) || data.maxSessionDuration == null || data.maxSessionDuration is number) &&
+             (!('lateNightSessions' in data) || data.lateNightSessions == null || data.lateNightSessions is number) &&
+             (!('lastSessionDate' in data) || data.lastSessionDate == null || data.lastSessionDate is string) &&
+             (!('dailyMinutes' in data) || data.dailyMinutes == null || data.dailyMinutes is map) &&
+             (!('dailySeconds' in data) || data.dailySeconds == null || data.dailySeconds is map) &&
+             (!('soundMeditationMinutes' in data) || data.soundMeditationMinutes == null || data.soundMeditationMinutes is map) &&
+             (!('theme' in data) || data.theme == null || data.theme is string) &&
+             (!('soundEnabled' in data) || data.soundEnabled == null || data.soundEnabled is bool) &&
+             (!('vibrationEnabled' in data) || data.vibrationEnabled == null || data.vibrationEnabled is bool) &&
+             (!('startSound' in data) || data.startSound == null || data.startSound is string) &&
+             (!('endSound' in data) || data.endSound == null || data.endSound is string) &&
+             (!('ambientSound' in data) || data.ambientSound == null || data.ambientSound is string) &&
+             (!('dailyGoal' in data) || data.dailyGoal == null || data.dailyGoal is number) &&
+             (!('startDelayEnabled' in data) || data.startDelayEnabled == null || data.startDelayEnabled is bool) &&
+             (!('duration' in data) || data.duration == null || data.duration is number) &&
+             (!('isCustomDurationMode' in data) || data.isCustomDurationMode == null || data.isCustomDurationMode is bool) &&
+             (!('customMinutes' in data) || data.customMinutes == null || data.customMinutes is number) &&
+             (!('customSeconds' in data) || data.customSeconds == null || data.customSeconds is number) &&
+             (!('ringGradient' in data) || data.ringGradient == null || data.ringGradient is string) &&
+             (!('chartColor' in data) || data.chartColor == null || data.chartColor is string) &&
+             (!('endBellEnabled' in data) || data.endBellEnabled == null || data.endBellEnabled is bool) &&
+             (!('notificationsEnabled' in data) || data.notificationsEnabled == null || data.notificationsEnabled is bool) &&
+             (!('reminderTime' in data) || data.reminderTime == null || (data.reminderTime is string && data.reminderTime.matches("^\\d{2}:\\d{2}$"))) &&
+             (!('role' in data) || data.role == null || data.role in ['admin', 'user']) &&
+             (!('lastLogin' in data) || data.lastLogin == null || data.lastLogin is string) &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidSession(data) {
+      return hasOnlyAllowedFields(['userId', 'date', 'duration', 'minutes', 'type', 'createdAt', 'mood', 'note']) &&
+             data.userId == request.auth.uid &&
+             data.date is string &&
+             data.duration is number &&
+             data.minutes is number &&
+             data.type is string &&
+             data.createdAt is timestamp &&
+             (!('mood' in data) || (data.mood is number && data.mood >= 1 && data.mood <= 5)) &&
+             (!('note' in data) || data.note == null || (data.note is string && data.note.size() < 1000));
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if (isOwner(userId) || isAdmin()) && isValidUser(request.resource.data);
+    }
+
+    match /sessions/{sessionId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow create: if isAuthenticated() && isValidSession(request.resource.data);
+      allow update: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin()) && 
+                    isValidSession(request.resource.data) &&
+                    areImmutableFieldsUnchanged(['userId', 'date', 'duration', 'minutes', 'type', 'createdAt']);
+      allow delete: if false;
+    }
+
+    match /articles/{articleId} {
+      allow read: if resource.data.status == 'published' || isAdmin();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    function isValidTrack(data) {
+      return hasOnlyAllowedFields(['id', 'name', 'category', 'url', 'image', 'createdAt', 'order']) &&
+             data.id is string && data.id.size() > 0 && data.id.size() < 100 &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.category is string && data.category in ['Binaural', 'Solfeggio', 'Nature', 'Meditation'] &&
+             data.url is string && data.url.size() > 0 && data.url.size() < 500 &&
+             (!('image' in data) || data.image == null || (data.image is string && data.image.size() < 500)) &&
+             data.createdAt is string &&
+             (!('order' in data) || data.order is number);
+    }
+
+    match /tracks/{trackId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidTrack(request.resource.data);
+      allow update: if isAdmin() && isValidTrack(request.resource.data);
+      allow delete: if isAdmin();
+    }
+  }
+}
